@@ -1,7 +1,6 @@
-# Memora
+# 🌰 Memora (블로그 by 싸이월드)
 <img width="799" alt="main" src="https://github.com/AN-YEJU/team4_project/assets/126753514/3069bbe5-44ed-4b7d-9a38-c39be044ca44">
 
-블로그 by 싸이월드
 <br/>
 <br/>
 
