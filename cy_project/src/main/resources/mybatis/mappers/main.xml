@@ -1,0 +1,114 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cy.dao.MainDao">
+    
+   <select id="home" parameterType="String" resultType="com.cy.dto.MainDto">   
+      select * from MAIN WHERE id=#{id}                            
+   </select>
+   
+    <insert id="register" parameterType="hashmap">
+       insert into MAIN (mainId, id, mainTitle) values(main_SEQ.NEXTVAL,#{id}, #{mainTitle})
+    </insert>
+   
+   <update id="modifyTitle" parameterType="hashmap">
+   	 UPDATE MAIN SET mainTitle=#{mainTitle}
+   	 	WHERE id=#{id}
+   </update>
+   
+   <update id="modifyContent" parameterType="hashmap">
+   	 UPDATE MAIN SET content=#{content}
+   	 	WHERE id=#{id}
+   </update>
+   
+   <update id="modifyProfileImg" parameterType="hashmap">
+   	 UPDATE MAIN SET profileImg=#{profileImg} 
+   	 	WHERE id=#{id}
+   </update>
+   
+<!--    토탈 증가 -->
+    <insert id="totalPlus" parameterType="int">
+      insert into TOTAL (totalDate, mainId) values(SYSDATE, #{mainId})
+    </insert>
+   
+   <select id="today" parameterType="int" resultType="int"> 
+	SELECT COUNT(*)
+		FROM TOTAL
+		WHERE TRUNC(totalDate) = TRUNC(SYSDATE)
+		  AND mainId = #{mainId}   
+                         
+   </select>
+
+   <select id="total" parameterType="int" resultType="int"> 
+      select COUNT(*) from TOTAL WHERE mainId=#{mainId}                              
+   </select>
+   
+<!--    최신글 4개만 뽑아오기 -->
+    <select resultType="com.cy.dto.ContentDto" id="newList" parameterType="String">
+       <![CDATA[
+		SELECT *
+        FROM (
+            SELECT diaryTitle, NULL AS photoTitle, 'diary' AS type, diaryDate AS contentDate
+            FROM (
+              SELECT diaryTitle, diaryDate
+              FROM diary
+              WHERE hostId = #{hostId}
+              ORDER BY diaryDate DESC
+            )
+            WHERE ROWNUM <= 4
+
+            UNION
+
+            SELECT NULL AS diaryTitle, photoTitle, 'photo' AS type, photoDate AS contentDate
+            FROM (
+              SELECT photoTitle, photoDate
+              FROM photo
+              WHERE hostId = #{hostId}
+              ORDER BY photoDate DESC
+            )
+            WHERE ROWNUM <= 4
+        )
+        ORDER BY contentDate DESC
+		]]>
+    </select>
+<!-- 다이어리 갯수 가져오는 쿼리    -->
+    <select id="todayDiary" parameterType="String" resultType="int"> 
+		SELECT COUNT(*)
+		FROM diary
+		WHERE TRUNC(diaryDate) = TRUNC(SYSDATE)
+		  AND hostId = #{hostId}   
+                         
+   </select>
+
+   <select id="totalDiary" parameterType="String" resultType="int"> 
+      select COUNT(*) from diary WHERE hostId=#{hostId} 
+   </select>
+   
+   <!-- 사진첩 갯수 가져오는 쿼리    -->
+   <select id="todayPhoto" parameterType="String" resultType="int"> 
+		SELECT COUNT(*)
+		FROM photo
+		WHERE TRUNC(photoDate) = TRUNC(SYSDATE)
+		  AND hostId = #{hostId}   
+                         
+   </select>
+
+   <select id="totalPhoto" parameterType="String" resultType="int"> 
+      select COUNT(*) from photo WHERE hostId=#{hostId}
+   </select>
+   
+   <!-- 방명록 갯수 가져오는 쿼리    -->
+   <select id="todayVisit" parameterType="String" resultType="int"> 
+		SELECT COUNT(*)
+		FROM visit
+		WHERE TRUNC(visitDate) = TRUNC(SYSDATE)
+		  AND hostId = #{hostId}   
+                         
+   </select>
+
+   <select id="totalVisit" parameterType="String" resultType="int"> 
+      select COUNT(*) from visit WHERE hostId=#{hostId} 
+   </select>
+   
+</mapper>

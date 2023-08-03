@@ -1,0 +1,84 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cy.dao.PhotoDao">
+
+    <!-- 글 목록을 가져오는 쿼리 -->
+    <select resultType="com.cy.dto.PhotoDto" id="photo">
+		<![CDATA[
+			SELECT photoId, photoTitle, photoCont, photoDate, hostId, photoPath, cateId, count
+			FROM (
+			    SELECT photoId, photoTitle, photoCont, photoDate, hostId, photoPath, cateId,
+			        COUNT(*) OVER (PARTITION BY hostId) as count,
+			        ROW_NUMBER() OVER (ORDER BY photoDate DESC) as rn
+			    FROM photo
+			    WHERE hostId = #{hostId}
+			) 
+			WHERE rn > (#{pageNum} - 1) * #{amount} AND rn <= #{pageNum} * #{amount}
+			ORDER BY photoDate DESC
+
+	   	]]>
+    </select>
+
+<!--     작성하는 쿼리 -->
+    <insert id="photoWrite" parameterType="hashmap">
+	INSERT INTO photo(photoId, photoTitle, photoCont, photoDate, hostId, cateId, photoPath)
+    VALUES (photo_SEQ.NEXTVAL, #{photoTitle}, #{photoCont}, SYSDATE, #{hostId}, #{cateId}, #{photoPath})
+    </insert>
+
+<!--     글 내용을 조회하는 쿼리 -->
+    <select resultType="com.cy.dto.PhotoDto" id="photoView" parameterType="hashmap">
+		 select photoId, photoTitle, photoCont, photoDate, hostId, photoPath, cateId from photo where photoId = #{photoId}
+    </select>
+
+<!--     글을 수정하는 쿼리 -->
+    <update id="photoModify" parameterType="hashmap">
+	  UPDATE photo SET photoTitle = #{photoTitle}, photoCont = #{photoCont}, photoPath = #{photoPath}, cateId = #{cateId}
+    	WHERE photoId = #{photoId}
+    </update>
+
+<!--     글을 삭제하는 쿼리 -->
+    <delete id="photoDelete" parameterType="hashmap">
+		delete from photo where photoId = #{photoId}
+    </delete>
+
+<!-- 댓글 조회하는 쿼리 -->
+	 <select resultType="com.cy.dto.PhotoCommentDto" id="pcList" parameterType="int">
+			SELECT *
+			from photo_comments where photoId = #{photoId}
+			order by photoNo 
+    </select>
+
+	<!--     댓글 작성하는 쿼리 -->
+    <insert id="photoCommentWrite" parameterType="hashmap">
+	INSERT INTO photo_comments(photoNo, comments, commentDate, commenter, photoId)
+    VALUES (photo_comments_SEQ.NEXTVAL, #{comments}, SYSDATE, #{commenter}, #{photoId})
+    </insert>
+    
+    <!--     댓글 삭제하는 쿼리 -->
+    <delete id="photoCommentDelete" parameterType="hashmap">
+		delete from photo_comments where photoNo = #{photoNo}
+    </delete>
+    
+<!--     카테고리 -->
+    <select resultType="com.cy.dto.PhotoCategoryDto" id="cateList" parameterType="int">
+		 select * from photo_category where mainId = #{mainId}
+		 order by cateId desc
+    </select>
+    
+    <insert id="cateWrite" parameterType="hashmap">
+	INSERT INTO photo_category(cateId, cateName, mainId)
+    VALUES (photo_category_SEQ.NEXTVAL, #{cateName}, #{mainId})
+    </insert>
+
+    <update id="cateModify" parameterType="hashmap">
+	  UPDATE photo_category SET cateName = #{cateName}
+    	WHERE cateId = #{cateId}
+    </update>
+
+    <delete id="cateDelete" parameterType="hashmap">
+		delete from photo_category where cateId = #{cateId}
+    </delete>
+    
+</mapper>

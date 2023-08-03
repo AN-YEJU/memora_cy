@@ -1,0 +1,63 @@
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cy.dao.DiaryDao">
+
+    <!-- 글 목록을 가져오는 쿼리 -->
+    <select resultType="com.cy.dto.DiaryDto" id="diary">
+    	<![CDATA[
+			SELECT diaryId, diaryDate, diaryTitle, diaryCont, hostId, count
+			FROM (
+			    SELECT diaryId, diaryDate, diaryTitle, diaryCont, hostId,
+			        COUNT(*) OVER (PARTITION BY hostId) as count,
+			        ROW_NUMBER() OVER (ORDER BY diaryDate DESC) as rn
+			    FROM diary
+			    WHERE hostId = #{hostId}
+			) 
+			WHERE rn > (#{pageNum} - 1) * #{amount} AND rn <= #{pageNum} * #{amount}
+			ORDER BY diaryDate DESC
+
+	   	]]>
+    </select>
+
+<!--     다이어리 작성하는 쿼리 -->
+    <insert id="diaryWrite" parameterType="hashmap">
+	INSERT INTO diary(diaryId, diaryDate, diaryTitle, diaryCont, hostId)
+    VALUES (diary_SEQ.NEXTVAL, SYSDATE, #{diaryTitle}, #{diaryCont}, #{hostId})
+    </insert>
+
+<!--     글 내용을 조회하는 쿼리 -->
+    <select resultType="com.cy.dto.DiaryDto" id="diaryView" parameterType="hashmap">
+		 select diaryId, diaryDate, diaryTitle, diaryCont, hostId from diary where diaryId = #{diaryId}
+    </select>
+
+<!--     글을 수정하는 쿼리 -->
+    <update id="diaryModify" parameterType="hashmap">
+	  UPDATE diary SET diaryTitle = #{diaryTitle}, diaryCont = #{diaryCont}
+    	WHERE diaryId = #{diaryId}
+    </update>
+
+<!--     글을 삭제하는 쿼리 -->
+    <delete id="diaryDelete" parameterType="hashmap">
+		delete from diary where diaryId = #{diaryId}
+    </delete>
+
+<!-- 댓글 조회하는 쿼리 -->
+	 <select resultType="com.cy.dto.DiaryCommentDto" id="dcList" parameterType="int">
+			SELECT diaryNo, diaryId, commenter, comments, commentDate
+			from diary_comments where diaryId = #{diaryId}
+			order by diaryNo 
+    </select>
+
+	<!--     댓글 작성하는 쿼리 -->
+    <insert id="diaryCommentWrite" parameterType="hashmap">
+	INSERT INTO diary_comments(diaryNo, diaryId, commenter, comments, commentDate)
+    VALUES (diary_comments_SEQ.NEXTVAL, #{diaryId}, #{commenter}, #{comments}, SYSDATE)
+    </insert>
+    
+    <!--     댓글 삭제하는 쿼리 -->
+    <delete id="diaryCommentDelete" parameterType="hashmap">
+		delete from diary_comments where diaryNo = #{diaryNo}
+    </delete>
+</mapper>

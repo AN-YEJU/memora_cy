@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.cy.dao.VisitDao">
+
+    <!-- 글 목록을 가져오는 쿼리 -->
+    <select resultType="com.cy.dto.VisitDto" id="visit">
+    	<![CDATA[
+			SELECT visitId, visitCont, visitDate, hostId, guestId, count
+			FROM (
+			    SELECT visitId, visitCont, visitDate, hostId, guestId,
+			        COUNT(*) OVER (PARTITION BY hostId) as count,
+			        ROW_NUMBER() OVER (ORDER BY visitDate DESC) as rn
+			    FROM visit
+			    WHERE hostId = #{hostId}
+			) 
+			WHERE rn > (#{pageNum} - 1) * #{amount} AND rn <= #{pageNum} * #{amount}
+			ORDER BY visitDate DESC
+	   	]]>
+    </select>
+
+    <insert id="visitWrite" parameterType="hashmap">
+		INSERT INTO visit(visitId, visitCont, visitDate, hostId, guestId)
+	    VALUES (visit_SEQ.NEXTVAL, #{visitCont}, SYSDATE, #{hostId}, #{guestId})
+    </insert>
+
+
+    <delete id="visitDelete" parameterType="hashmap">
+		delete from visit where visitId = #{visitId}
+    </delete>
+
+<!-- 댓글 조회하는 쿼리 -->
+	 <select resultType="com.cy.dto.VisitCommentDto" id="vcList" parameterType="int">
+			SELECT visitId, commentDate, comments
+			from visit_comments where visitId = #{visitId}
+    </select>
+
+	<!--     댓글 작성하는 쿼리 -->
+    <insert id="visitCommentWrite" parameterType="hashmap">
+	INSERT INTO visit_comments(visitId, comments, commentDate)
+    VALUES (#{visitId}, #{comments}, SYSDATE)
+    </insert>
+    
+    <!--     댓글 삭제하는 쿼리 -->
+    <delete id="visitCommentDelete" parameterType="hashmap">
+		delete from visit_comments where visitId = #{visitId}
+    </delete>
+</mapper>
